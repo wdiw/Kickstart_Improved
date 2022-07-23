@@ -31,14 +31,15 @@ class CampaignIndex extends Component {
     return (
       <Layout>
         <div>
-          Campaign Index
+          <h3>Campaign Index</h3>
           <Link route="campaigns/new">
             <a>
               <Button
-                content="Create Campaign"
-                icon="add circle"
                 floated="right"
+                content="Create campaign"
+                icon="add"
                 primary
+                labelPosition="right"
               />
             </a>
           </Link>
