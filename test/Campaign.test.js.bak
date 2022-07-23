@@ -1,0 +1,101 @@
+const assert = require("assert");
+const ganache = require("ganache-cli");
+const Web3 = require("web3");
+const web3 = new Web3(ganache.provider());
+
+const compiledCampaign = require("../ethereum/build/Campaign.json");
+const compiledFactory = require("../ethereum/build/CampaignFactory.json");
+const { beforeEach, describe } = require("mocha");
+
+let accounts;
+let factory;
+let campaignAddress;
+let campaign;
+/*  測試項目
+[CampaignFactory]
+    1.一般用戶 能否透過 CampaignFactory 建立他自己的募案   [Done]
+    2. 管理員 能否透過 CampaignFactory 叫出目前已建立募案  [Done]
+    3. 能回傳已經建立的募資                               [Done]
+[Campaign]
+    1.投資功能
+    2.發起購案
+    3.同意購案
+    4.完成購案
+*/
+
+beforeEach(async () => {
+  accounts = await web3.eth.getAccounts();
+  //用帳號0 部署合約工廠
+  factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
+    .deploy({ data: compiledFactory.bytecode })
+    .send({ from: accounts[0], gas: "1000000" });
+
+  //用帳號1 呼叫合約工廠 建立募案
+  await factory.methods
+    .createCampaign("100")
+    .send({ from: accounts[1], gas: "1000000" });
+
+  const address = await factory.methods.getDeployedCampaigns().call();
+  campaignAddress = address[0];
+
+  campaign = await new web3.eth.Contract(
+    JSON.parse(compiledCampaign.interface),
+    campaignAddress
+  );
+});
+
+describe("CampaignFactory", () => {
+  it("can be used contract method to deploy contract by normal person", () => {
+    assert.ok(factory.options.address);
+    assert.ok(campaign.options.address);
+  });
+});
+
+describe("Campaign", () => {
+  it("manager should be accounts[1]", async () => {
+    const manager = await campaign.methods.manager().call();
+    assert.equal(accounts[1], manager);
+  });
+
+  it("can collect fund from approver, the balance of contract should be 1 Ether and account[1] should be contributor", async () => {
+    //帳號0 可以成功投資帳號1的募案，並且成為集資人
+    await campaign.methods.contribute().send({
+      from: accounts[0],
+      value: web3.utils.toWei("1", "ether"),
+    });
+    const isContributor = await campaign.methods.approvers(accounts[0]).call();
+    const balance = await web3.eth.getBalance(campaignAddress);
+    assert.equal(balance, web3.utils.toWei("1", "ether"));
+    assert.ok(isContributor);
+  });
+
+  it("manager can crete purchasing request ", async () => {
+    //帳號1 建立購案 要向帳號2 買東西
+    await campaign.methods
+      .createRequest(
+        "Buy component",
+        web3.utils.toWei("1", "ether"),
+        accounts[2]
+      )
+      .send({
+        from: accounts[1],
+        gas: "1000000",
+      });
+
+    const request = await campaign.methods.requests(0).call();
+    assert(request);
+  });
+
+  it("debug", async () => {
+    //帳號0 要同意購案0
+    await campaign.methods.approveRequest(0).send({
+      from: accounts[0],
+      gas: "1000000",
+    });
+  });
+
+  // const request = await campaign.methods.requests(0).call();
+  // console.log(request);
+  // assert(request);
+  //   it("can finish purchasing request", () => {});
+});
