@@ -1,8 +1,7 @@
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 const Web3 = require("web3");
 const compiledFactory = require("./build/CampaignFactory.json").CampaignFactory;
-const MNEMONIC =
-  "list approve surge exhaust expose transfer list dragon multiply width carpet crash";
+const MNEMONIC = "paste your mnemonic";
 const provider = new HDWalletProvider(
   MNEMONIC,
   "https://rinkeby.infura.io/v3/cea2d39776094df9b2ec98c35edc640d"

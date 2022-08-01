@@ -5,7 +5,7 @@ const compiledFactory =
 const stringAbi = JSON.stringify(compiledFactory.abi);
 const instance = new web3.eth.Contract(
   JSON.parse(stringAbi),
-  "0xE49b7C80aA9aB17dd7e14cA114a9CdEfD855DB40"
+  "0x904f2eB184F4eAd4178e95CC1f3B377218122E40"
 );
 
 export default instance;
